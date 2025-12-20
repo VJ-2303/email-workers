@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/VJ-2303/email-worker/internal/worker"
 )
 
 const version = "1.0.0"
@@ -17,8 +19,9 @@ type config struct {
 }
 
 type application struct {
-	config config
-	logger *log.Logger
+	config     config
+	logger     *log.Logger
+	workerPool *worker.Pool
 }
 
 func main() {
@@ -29,10 +32,14 @@ func main() {
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
+	pool := worker.NewPool(4, 10, logger)
+
+	pool.Run()
 
 	app := &application{
-		config: cfg,
-		logger: logger,
+		config:     cfg,
+		logger:     logger,
+		workerPool: pool,
 	}
 
 	mux := http.NewServeMux()
