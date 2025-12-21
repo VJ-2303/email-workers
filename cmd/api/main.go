@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/VJ-2303/email-worker/internal/mailer"
 	"github.com/VJ-2303/email-worker/internal/worker"
 )
 
@@ -16,6 +17,13 @@ const version = "1.0.0"
 type config struct {
 	port int
 	env  string
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 type application struct {
@@ -29,10 +37,18 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "devolopment", "Environment (devolopment|staging|production)")
+
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.gmail.com", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 587, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-user", "vanaraj1018@gmail.com", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-pass", "your smtp password", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "test@email-worker.com", "SMTP sender email")
+
 	flag.Parse()
 
+	mailerInstance := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender)
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
-	pool := worker.NewPool(4, 10, logger)
+	pool := worker.NewPool(4, 10, logger, mailerInstance)
 
 	pool.Run()
 

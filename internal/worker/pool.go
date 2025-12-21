@@ -3,6 +3,8 @@ package worker
 import (
 	"log"
 	"sync"
+
+	"github.com/VJ-2303/email-worker/internal/mailer"
 )
 
 type Task struct {
@@ -17,13 +19,15 @@ type Pool struct {
 	taskQuese  chan Task
 	wg         sync.WaitGroup
 	logger     *log.Logger
+	mailer     *mailer.Mailer
 }
 
-func NewPool(maxWorkers int, queueSize int, logger *log.Logger) *Pool {
+func NewPool(maxWorkers int, queueSize int, logger *log.Logger, m *mailer.Mailer) *Pool {
 	return &Pool{
 		maxWorkers: maxWorkers,
 		taskQuese:  make(chan Task, queueSize),
 		logger:     logger,
+		mailer:     m,
 	}
 }
 
@@ -42,7 +46,12 @@ func (p *Pool) worker(id int) {
 	for task := range p.taskQuese {
 		p.logger.Printf("Worker %d processing email to %s", id, task.To)
 
-		p.process(task)
+		err := p.mailer.Send(task.To, task.From, task.Subject, task.Body)
+		if err != nil {
+			p.logger.Printf("Worker %d: ERROR sending to %s: %s", id, task.To, err)
+		} else {
+			p.logger.Printf("Worker %d: SUCCESS sent to %s", id, task.To)
+		}
 	}
 	p.logger.Printf("Worker %d stopped", id)
 }
