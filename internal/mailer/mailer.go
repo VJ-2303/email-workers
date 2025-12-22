@@ -29,7 +29,7 @@ func (m *Mailer) Send(recipient, replyTo, subject, body string) error {
 	msg.SetHeader("To", recipient)
 
 	if replyTo != "" {
-		msg.SetAddressHeader("Reply-To", replyTo, "User via Our App")
+		msg.SetAddressHeader("Reply-To", replyTo, "Sender")
 	}
 
 	msg.SetHeader("Subject", subject)

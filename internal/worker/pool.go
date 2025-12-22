@@ -56,10 +56,11 @@ func (p *Pool) worker(id int) {
 	p.logger.Printf("Worker %d stopped", id)
 }
 
-func (p *Pool) process(t Task) {
-	p.logger.Printf("Sending email: Subject=%q", t.Subject)
-}
-
 func (p *Pool) Submit(t Task) {
 	p.taskQuese <- t
+}
+
+func (p *Pool) Shutdown() {
+	close(p.taskQuese)
+	p.wg.Wait()
 }

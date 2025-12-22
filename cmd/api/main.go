@@ -1,15 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/VJ-2303/email-worker/internal/mailer"
 	"github.com/VJ-2303/email-worker/internal/worker"
+	"github.com/joho/godotenv"
 )
 
 const version = "1.0.0"
@@ -33,6 +37,7 @@ type application struct {
 }
 
 func main() {
+	godotenv.Load()
 	var cfg config
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
@@ -41,7 +46,7 @@ func main() {
 	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.gmail.com", "SMTP host")
 	flag.IntVar(&cfg.smtp.port, "smtp-port", 587, "SMTP port")
 	flag.StringVar(&cfg.smtp.username, "smtp-user", "vanaraj1018@gmail.com", "SMTP username")
-	flag.StringVar(&cfg.smtp.password, "smtp-pass", "your smtp password", "SMTP password")
+	flag.StringVar(&cfg.smtp.password, "smtp-pass", os.Getenv("SMTPPASS"), "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "test@email-worker.com", "SMTP sender email")
 
 	flag.Parse()
@@ -69,7 +74,30 @@ func main() {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
-	err := srv.ListenAndServe()
-	logger.Fatal(err)
+
+	go func() {
+		logger.Printf("server starting on port %s", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal(err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT)
+
+	sig := <-quit
+
+	logger.Printf("Caught Signal: %s, Shutting down server....", sig.String())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Fatal("Forced Shutdown")
+	}
+	logger.Println("Waiting for Email workers to finish")
+	pool.Shutdown()
+	logger.Println("Email workers stopped")
+
+	logger.Println("Server stopped")
 }
