@@ -63,13 +63,9 @@ func main() {
 		workerPool: pool,
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/healthcheck", app.healthcheclHandler)
-	mux.HandleFunc("/v1/send", app.sendEmailHandler)
-
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      mux,
+		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -95,6 +91,7 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Fatal("Forced Shutdown")
 	}
+
 	logger.Println("Waiting for Email workers to finish")
 	pool.Shutdown()
 	logger.Println("Email workers stopped")
