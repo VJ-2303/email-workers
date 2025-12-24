@@ -41,3 +41,5 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	}
 	return nil
 }
+
+func (app *application) errorResponse()
