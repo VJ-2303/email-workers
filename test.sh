@@ -2,7 +2,7 @@
 
 echo "🚀 Launching 50 concurrent requests..."
 
-for i in {1..15}
+for i in {1..4}
 do
    curl -s -X POST http://localhost:4000/v1/send \
      -H "Content-Type: application/json" \

@@ -34,6 +34,7 @@ type application struct {
 	config     config
 	logger     *log.Logger
 	workerPool *worker.Pool
+	limiter    *Limiter
 }
 
 func main() {
@@ -54,6 +55,8 @@ func main() {
 	mailerInstance := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender)
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 	pool := worker.NewPool(4, 10, logger, mailerInstance)
+	limiter := NewLimiter(1, 3)
+	go limiter.CleanupClients()
 
 	pool.Run()
 
@@ -61,6 +64,7 @@ func main() {
 		config:     cfg,
 		logger:     logger,
 		workerPool: pool,
+		limiter:    limiter,
 	}
 
 	srv := &http.Server{

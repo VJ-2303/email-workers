@@ -30,13 +30,13 @@ func (app *application) sendEmailHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "To and sbject fields are required", http.StatusBadRequest)
 		return
 	}
-	task := worker.Task{
+	_ = worker.Task{
 		From:    input.From,
 		To:      input.To,
 		Subject: input.Subject,
 		Body:    input.Body,
 	}
-	app.workerPool.Submit(task)
+	// app.workerPool.Submit(task)
 
 	app.writeJSON(w, http.StatusAccepted, map[string]string{
 		"status":  "queued",

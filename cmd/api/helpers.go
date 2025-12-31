@@ -42,4 +42,9 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	return nil
 }
 
-func (app *application) errorResponse()
+func (app *application) rateLimitExceededResponse(w http.ResponseWriter) {
+	err := app.writeJSON(w, http.StatusTooManyRequests, "Rate Limit exceeded")
+	if err != nil {
+		app.logger.Print(err)
+	}
+}
