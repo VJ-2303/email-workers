@@ -33,11 +33,13 @@ func (l *Limiter) CleanupClients() {
 	for {
 		time.Sleep(1 * time.Minute)
 
+		l.mu.Lock()
 		for ip, v := range l.clients {
 			if time.Since(v.lastseen) > 3*time.Minute {
 				delete(l.clients, ip)
 			}
 		}
+		l.mu.Unlock()
 	}
 }
 
